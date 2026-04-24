@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom"
 import ActivityFeed from "../components/ActivityFeed"
 import CourseCard from "../components/CourseCard"
 import LRNBalanceWidget from "../components/LRNBalanceWidget"
+import MyBookmarks from "../components/MyBookmarks"
 import { useCourse } from "../hooks/useCourse"
 import { useLearnerProfile } from "../hooks/useLearnerProfile"
 import { useLearnToken } from "../hooks/useLearnToken"
@@ -217,6 +218,8 @@ const Dashboard: React.FC = () => {
 								</Link>
 							</div>
 						)}
+
+						<MyBookmarks />
 					</section>
 
 					{/* Activity Feed — takes up 1/3 on large screens, full width below */}

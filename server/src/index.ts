@@ -23,6 +23,7 @@ import { buildOpenApiSpec } from "./openapi"
 import { adminMilestonesRouter } from "./routes/admin-milestones.routes"
 import { adminRouter } from "./routes/admin.routes"
 import { createAuthRouter } from "./routes/auth.routes"
+import { createBookmarksRouter } from "./routes/bookmarks.routes"
 import { createCommentsRouter } from "./routes/comments.routes"
 import { communityRouter } from "./routes/community.routes"
 import { coursesRouter } from "./routes/courses.routes"
@@ -180,6 +181,7 @@ app.use("/api", adminMilestonesRouter)
 app.use("/api", scholarsRouter)
 app.use("/api", createUploadRouter(jwtService))
 app.use("/api", enrollmentsRouter)
+app.use("/api", createBookmarksRouter(jwtService))
 app.use("/api", scholarshipsRouter)
 app.use("/api", treasuryRouter)
 app.use("/api/wiki", wikiRouter)

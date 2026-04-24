@@ -250,3 +250,15 @@ export const enrollmentBodySchema = z
 		tx_hash: requiredString("tx_hash"),
 	})
 	.strict()
+
+export const bookmarkBodySchema = z
+	.object({
+		course_id: requiredString("course_id"),
+	})
+	.strict()
+
+export const bookmarkCourseIdParamSchema = z
+	.object({
+		courseId: requiredString("courseId"),
+	})
+	.strict()
