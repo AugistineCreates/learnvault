@@ -102,7 +102,7 @@ describe("GET /api/courses", () => {
 		const res = await request(buildApp()).get("/api/courses?search=stellar")
 
 		expect(res.status).toBe(200)
-		expect(res.body.total).toBe(1)
+		expect(res.body.pagination.total).toBe(1)
 		expect(mockedQuery).toHaveBeenNthCalledWith(
 			1,
 			expect.stringContaining("c.title ILIKE $1 OR c.description ILIKE $1"),

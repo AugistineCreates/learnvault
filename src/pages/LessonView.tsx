@@ -5,6 +5,7 @@ import { CourseForum } from "../components/forum/CourseForum"
 import LessonContent from "../components/LessonContent"
 import LessonSidebar from "../components/LessonSidebar"
 import MilestoneSubmitPanel from "../components/MilestoneSubmitPanel"
+
 import { LessonListSkeleton } from "../components/skeletons/LessonListSkeleton"
 import { useCourse } from "../hooks/useCourse"
 import { useCourseDetail } from "../hooks/useCourses"
@@ -43,7 +44,7 @@ const LessonView: React.FC = () => {
 		course,
 		isLoading: isLoadingCourse,
 		error: courseError,
-	} = useCourseDetail(courseId)
+	} = useCourseDetail(courseId, address)
 
 	const [isLoadingContent, setIsLoadingContent] = useState(true)
 	const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -248,7 +249,6 @@ const LessonView: React.FC = () => {
 					</h1>
 				</div>
 			</header>
-
 			{/* Course progress bar */}
 			{allLessons.length > 0 &&
 				(() => {

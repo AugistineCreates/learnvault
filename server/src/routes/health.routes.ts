@@ -4,7 +4,10 @@ import path from "node:path"
 import { Router } from "express"
 import Redis from "ioredis"
 
+
 import { getPgStatStatementsSnapshot, pool } from "../db/index"
+import { getRpcCacheStats, resetRpcCacheStats } from "../lib/rpc-cache"
+const log = logger.child({ module: "health" })
 
 export const healthRouter = Router()
 
@@ -239,9 +242,12 @@ const deriveOverallStatus = (
  *             schema:
  *               $ref: '#/components/schemas/HealthResponse'
  */
-healthRouter.get("/health", async (_req, res) => {
-	const uptime = process.uptime()
-	const timestamp = new Date().toISOString()
+healthRouter.get("/health", async (req, res) => {
+	const [database, redis, stellarHorizon] = await Promise.all([
+		checkDatabase(),
+		checkRedis(),
+		checkHorizon(),
+	])
 
 	const [database, redis, stellarHorizon] = await Promise.all([
 		checkDatabase(),
@@ -291,4 +297,15 @@ healthRouter.get("/health/db/performance", async (_req, res) => {
 			error: "Failed to fetch database performance stats",
 		})
 	}
+})
+
+/** GET /api/rpc-stats — RPC cache hit/miss counters since last reset */
+healthRouter.get("/rpc-stats", (_req, res) => {
+	res.json(getRpcCacheStats())
+})
+
+/** DELETE /api/rpc-stats — reset counters */
+healthRouter.delete("/rpc-stats", (_req, res) => {
+	resetRpcCacheStats()
+	res.json({ reset: true })
 })

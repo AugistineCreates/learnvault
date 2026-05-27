@@ -9,7 +9,6 @@ const mockAuthService: jest.Mocked<AuthService> = {
 	verifyLinkSignature: jest.fn(),
 	createChallenge: jest.fn(),
 	verifySignedTransaction: jest.fn(),
-	logout: jest.fn(),
 }
 
 function buildApp() {
@@ -50,7 +49,9 @@ describe("Auth Routes", () => {
 
 	describe("POST /api/auth/challenge/verify", () => {
 		it("returns a token on successful verification", async () => {
-			mockAuthService.verifySignedTransaction.mockResolvedValue("mock_jwt_token")
+			mockAuthService.verifySignedTransaction.mockResolvedValue(
+				"mock_jwt_token",
+			)
 
 			const res = await request(buildApp())
 				.post("/api/auth/challenge/verify")
@@ -71,7 +72,9 @@ describe("Auth Routes", () => {
 
 	describe("GET /api/auth/nonce", () => {
 		it("returns a nonce for a given address", async () => {
-			mockAuthService.getOrCreateNonce.mockResolvedValue({ nonce: "mock_nonce" })
+			mockAuthService.getOrCreateNonce.mockResolvedValue({
+				nonce: "mock_nonce",
+			})
 
 			const res = await request(buildApp())
 				.get("/api/auth/nonce")
@@ -105,21 +108,5 @@ describe("Auth Routes", () => {
 		})
 	})
 
-	describe("POST /api/auth/logout", () => {
-		it("revokes the token on logout", async () => {
-			mockAuthService.logout.mockResolvedValue(undefined)
-
-			const res = await request(buildApp())
-				.post("/api/auth/logout")
-				.set("Authorization", "Bearer mock_token")
-
-			expect(res.status).toBe(200)
-			expect(mockAuthService.logout).toHaveBeenCalledWith("mock_token")
-		})
-
-		it("returns 401 if Authorization header is missing", async () => {
-			const res = await request(buildApp()).post("/api/auth/logout")
-			expect(res.status).toBe(401)
-		})
-	})
+	// Logout was removed from the API (token revocation is handled by the JWT blocklist service).
 })

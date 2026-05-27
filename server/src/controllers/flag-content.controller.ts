@@ -86,8 +86,15 @@ export async function flagContent(
 
 		// Send email to admin
 		emailService
-			.sendAdminFlagNotification(contentType, contentId, reason, reporterAddress)
-			.catch((err) => console.error("[EmailService] Admin flag alert failed:", err))
+			.sendAdminFlagNotification(
+				contentType,
+				contentId,
+				reason,
+				reporterAddress,
+			)
+			.catch((err: unknown) =>
+				console.error("[EmailService] Admin flag alert failed:", err),
+			)
 
 		res.status(201).json({ data: flag })
 	} catch (err) {

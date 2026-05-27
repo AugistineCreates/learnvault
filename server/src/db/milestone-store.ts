@@ -88,7 +88,10 @@ class InMemoryMilestoneStore {
 	}
 
 	async createReport(
-		data: Omit<MilestoneReport, "id" | "status" | "submitted_at" | "resubmission_count">,
+		data: Omit<
+			MilestoneReport,
+			"id" | "status" | "submitted_at" | "resubmission_count"
+		>,
 	): Promise<MilestoneReport> {
 		const existing = this.reports.find(
 			(r) =>
@@ -268,7 +271,10 @@ export const milestoneStore = {
 	},
 
 	async createReport(
-		data: Omit<MilestoneReport, "id" | "status" | "submitted_at" | "resubmission_count">,
+		data: Omit<
+			MilestoneReport,
+			"id" | "status" | "submitted_at" | "resubmission_count"
+		>,
 	): Promise<MilestoneReport> {
 		if (!isRealPool()) return inMemoryMilestoneStore.createReport(data)
 		// Check for existing
@@ -382,4 +388,3 @@ export const milestoneStore = {
 		return result.rows
 	},
 }
-

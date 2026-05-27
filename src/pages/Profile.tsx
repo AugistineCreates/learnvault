@@ -1,8 +1,10 @@
 import React, { useCallback, useContext, useEffect, useState } from "react"
 import { Helmet } from "react-helmet"
 import { useTranslation } from "react-i18next"
+import { Link, useParams } from "react-router-dom"
 import { ActivityFeed } from "../components/ActivityFeed"
 import AddressDisplay from "../components/AddressDisplay"
+
 import IdenticonAvatar from "../components/IdenticonAvatar"
 import LRNHistoryChart from "../components/LRNHistoryChart"
 import ProfileEditForm, {
@@ -16,6 +18,8 @@ import {
 } from "../components/SkeletonLoader"
 import { ErrorState } from "../components/states/errorState"
 import { useLearnerProfile } from "../hooks/useLearnerProfile"
+import { useScholarCredentials } from "../hooks/useScholarCredentials"
+import { useScholarProfile } from "../hooks/useScholarProfile"
 import { WalletContext } from "../providers/WalletProvider"
 import { formatDuration, getLearningTimeSummary } from "../util/learningTime"
 import { shortenAddress } from "../util/scholarshipApplications"
@@ -56,8 +60,17 @@ type UserNft = {
 
 const Profile: React.FC = () => {
 	const { t } = useTranslation()
+	const { walletAddress: paramAddress } = useParams<{ walletAddress: string }>()
 	const { address: walletAddress } = useContext(WalletContext)
-	const { profile } = useLearnerProfile()
+
+	const displayAddress = paramAddress || walletAddress
+
+	const {
+		data: profile,
+		isLoading: isProfileLoading,
+		error: profileError,
+	} = useScholarProfile(displayAddress)
+
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 	const [nfts, setNfts] = useState<UserNft[]>([])
@@ -69,62 +82,46 @@ const Profile: React.FC = () => {
 	const [viewAddress, setViewAddress] = useState<string | null>(null)
 
 	const fetchCredentials = useCallback(async () => {
-		if (!walletAddress) {
+		if (!displayAddress) {
 			setNfts([])
 			setIsLoading(false)
 			return
 		}
 
-		const addresses =
-			profile?.wallets && profile.wallets.length > 0
-				? profile.wallets.map((w) => w.address)
-				: [walletAddress]
-
 		try {
 			setIsLoading(true)
 			setError(null)
 
-			const responses = await Promise.all(
-				addresses.map((addr) =>
-					fetch(`/api/credentials/${addr}`, { method: "GET" }),
-				),
-			)
-			for (const response of responses) {
-				if (!response.ok) {
-					const payload = await response.json().catch(() => ({}))
-					throw new Error(
-						payload.message || payload.error || "Unable to load credentials",
-					)
+			const response = await fetch(`/api/credentials/${displayAddress}`, {
+				method: "GET",
+			})
+
+			if (!response.ok) {
+				const payload = (await response.json().catch(() => ({}))) as {
+					message?: string
+					error?: string
 				}
+				throw new Error(
+					payload.message || payload.error || "Unable to load credentials",
+				)
 			}
-			const payloads = await Promise.all(
-				responses.map((r) => r.json() as Promise<{ data?: unknown[] }>),
+
+			const data = (await response.json()) as { data?: any[] }
+			setNfts(
+				Array.isArray(data.data)
+					? data.data.map((item: any) => ({
+							id: String(item.token_id ?? item.course_id ?? Math.random()),
+							course_id: item.course_id,
+							program: item.course_id ?? "Unknown course",
+							date: item.minted_at
+								? new Date(item.minted_at).toLocaleDateString()
+								: "Unknown",
+							artwork: item.metadata_uri
+								? `https://gateway.pinata.cloud/ipfs/${item.metadata_uri.replace("ipfs://", "")}`
+								: undefined,
+						}))
+					: [],
 			)
-			const byId = new Map<string, UserNft>()
-			for (const data of payloads) {
-				if (!Array.isArray(data.data)) continue
-				for (const item of data.data) {
-					const anyItem = item as any
-					const id = String(
-						anyItem.token_id ?? anyItem.course_id ?? crypto.randomUUID(),
-					)
-					if (byId.has(id)) continue
-					byId.set(id, {
-						id,
-						course_id: anyItem.course_id,
-						program: anyItem.course_id ?? "Unknown course",
-						date: anyItem.minted_at
-							? new Date(anyItem.minted_at).toLocaleDateString()
-							: "Unknown",
-						artwork: anyItem.metadata_uri
-							? `https://gateway.pinata.cloud/ipfs/${String(
-									anyItem.metadata_uri,
-								).replace("ipfs://", "")}`
-							: undefined,
-					})
-				}
-			}
-			setNfts([...byId.values()])
 		} catch (err) {
 			console.error("[profile] error loading credentials", err)
 			setError(
@@ -133,7 +130,44 @@ const Profile: React.FC = () => {
 		} finally {
 			setIsLoading(false)
 		}
-	}, [walletAddress, profile])
+	}, [displayAddress])
+
+	// Determine which address to view (from URL param or connected wallet)
+	useEffect(() => {
+		const pathMatch = window.location.pathname.match(/\/profile\/(.+)/)
+		if (pathMatch?.[1]) {
+			setViewAddress(pathMatch[1])
+		} else if (walletAddress) {
+			setViewAddress(walletAddress)
+		}
+	}, [walletAddress])
+
+	// Fetch rich profile data
+	const fetchProfileData = useCallback(async () => {
+		if (!viewAddress) return
+
+		try {
+			const response = await fetch(`/api/profile/${viewAddress}`)
+			if (!response.ok) {
+				const errorData = (await response.json().catch(() => ({}))) as {
+					error?: string
+				}
+				throw new Error(errorData.error || "Failed to load profile")
+			}
+			const data = (await response.json()) as {
+				profile?: UserProfile
+				stats?: ProfileStats
+			}
+			setUserProfile(data.profile ?? null)
+			setStats(data.stats ?? null)
+		} catch (err) {
+			console.error("[profile] Error loading profile data:", err)
+		}
+	}, [viewAddress])
+
+	useEffect(() => {
+		void fetchProfileData()
+	}, [fetchProfileData])
 
 	// Determine which address to view (from URL param or connected wallet)
 	useEffect(() => {
@@ -237,7 +271,7 @@ const Profile: React.FC = () => {
 			coursesCompleted !== 1 ? "s" : ""
 		} and earned ${lrnBalance} LRN on LearnVault.`
 
-	if (isLoading) {
+	if (isProfileLoading || isLoading) {
 		return (
 			<div className="p-12 max-w-6xl mx-auto text-white animate-in fade-in slide-in-from-bottom-8 duration-1000">
 				<ProfileSkeleton />
@@ -245,10 +279,13 @@ const Profile: React.FC = () => {
 		)
 	}
 
-	if (error) {
+	if (profileError || error) {
 		return (
 			<div className="p-12 max-w-6xl mx-auto text-white animate-in fade-in slide-in-from-bottom-8 duration-1000">
-				<ErrorState message={error} onRetry={fetchCredentials} />
+				<ErrorState
+					message={(profileError as any)?.message || error}
+					onRetry={fetchCredentials}
+				/>
 			</div>
 		)
 	}
@@ -262,7 +299,7 @@ const Profile: React.FC = () => {
 				<meta property="og:image" content={`${siteUrl}/og-image.png`} />
 				<meta
 					property="og:url"
-					content={`${siteUrl}/profile/${walletAddress ?? ""}`}
+					content={`${siteUrl}/profile/${displayAddress ?? ""}`}
 				/>
 				<meta name="twitter:card" content="summary_large_image" />
 			</Helmet>
@@ -313,9 +350,37 @@ const Profile: React.FC = () => {
 							<div className="px-5 py-2 glass rounded-full border border-white/10 text-xs font-black uppercase tracking-widest text-white/40">
 								{t("wallet.connect")}
 							</div>
-						)}
-						<div className="px-5 py-2 glass rounded-full border border-white/10 text-xs font-black uppercase tracking-widest text-brand-cyan">
-							Learning Time: {learningTimeLabel}
+							<div className="text-center md:text-left">
+								<div className="text-xl font-black text-white">
+									{profile?.following_count || 0}
+								</div>
+								<div className="text-[10px] uppercase font-black tracking-widest text-white/30">
+									Following
+								</div>
+							</div>
+						</div>
+						<div className="w-px h-10 bg-white/10 hidden md:block" />
+						<div className="flex flex-wrap gap-4">
+							{displayAddress ? (
+								<ReputationBadge size="md" showBalance />
+							) : (
+								<div className="px-5 py-2 glass rounded-full border border-white/10 text-xs font-black uppercase tracking-widest text-white/40">
+									{t("wallet.connect")}
+								</div>
+							)}
+							<div className="px-5 py-2 glass rounded-full border border-white/10 text-xs font-black uppercase tracking-widest text-brand-cyan">
+								Learning Time: {learningTimeLabel}
+							</div>
+							{stats?.reputationRank && (
+								<div className="px-5 py-2 glass rounded-full border border-white/10 text-xs font-black uppercase tracking-widest text-brand-purple">
+									Rank #{stats.reputationRank}
+								</div>
+							)}
+							{stats?.percentile && (
+								<div className="px-5 py-2 glass rounded-full border border-white/10 text-xs font-black uppercase tracking-widest text-brand-emerald">
+									Top {stats.percentile}%
+								</div>
+							)}
 						</div>
 						{stats?.reputationRank && (
 							<div className="px-5 py-2 glass rounded-full border border-white/10 text-xs font-black uppercase tracking-widest text-brand-purple">
@@ -496,10 +561,10 @@ const Profile: React.FC = () => {
 					<h2 className="text-2xl font-black tracking-tight">LRN History</h2>
 					<div className="h-px flex-1 bg-linear-to-r from-white/10 to-transparent" />
 				</div>
-				<LRNHistoryChart address={walletAddress} />
+				<LRNHistoryChart address={displayAddress} />
 			</section>
 
-			<ActivityFeed address={walletAddress} limit={10} />
+			<ActivityFeed address={displayAddress} limit={10} />
 		</div>
 	)
 }

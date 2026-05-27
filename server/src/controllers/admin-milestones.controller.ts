@@ -5,6 +5,7 @@ import {
 	attachPeerSummariesToReports,
 	listRecentPeerReviewsForReport,
 } from "../db/peer-review-store"
+
 import { type AdminRequest } from "../middleware/admin.middleware"
 import { credentialService } from "../services/credential.service"
 import { createEmailService } from "../services/email.service"
@@ -75,7 +76,7 @@ export async function listMilestones(
 			pageSize: safePageSize,
 		})
 	} catch (err) {
-		console.error("[admin] listMilestones error:", err)
+		log.error({ err }, "listMilestones error")
 		res.status(500).json({ error: "Failed to fetch milestones" })
 	}
 }
@@ -89,7 +90,7 @@ export async function getPendingMilestones(
 		const withPeers = await attachPeerSummariesToReports(reports)
 		res.status(200).json({ data: withPeers })
 	} catch (err) {
-		console.error("[admin] getPendingMilestones error:", err)
+		log.error({ err }, "getPendingMilestones error")
 		res.status(500).json({ error: "Failed to fetch pending milestones" })
 	}
 }
@@ -117,7 +118,7 @@ export async function getMilestoneById(
 			data: { ...(withPeers ?? report), auditLog, peer_reviews },
 		})
 	} catch (err) {
-		console.error("[admin] getMilestoneById error:", err)
+		log.error({ err }, "getMilestoneById error")
 		res.status(500).json({ error: "Failed to fetch milestone report" })
 	}
 }
@@ -194,7 +195,7 @@ export async function approveMilestone(
 				})
 			}
 		} catch (emailErr) {
-			console.error("[admin] approval email failed (non-blocking):", emailErr)
+			log.error({ err: emailErr }, "Approval email failed (non-blocking)")
 		}
 
 		let certificate = null
@@ -205,12 +206,13 @@ export async function approveMilestone(
 			)
 			if (mintResult.minted) {
 				certificate = mintResult
-				console.info(
-					`[admin] ScholarNFT minted for ${report.scholar_address} — course ${report.course_id} (tx: ${mintResult.mintTxHash})`,
+				log.info(
+					{ courseId: report.course_id, txHash: mintResult.mintTxHash },
+					"ScholarNFT minted",
 				)
 			}
 		} catch (mintErr) {
-			console.error("[admin] Certificate mint failed (non-blocking):", mintErr)
+			log.error({ err: mintErr }, "Certificate mint failed (non-blocking)")
 		}
 
 		res.status(200).json({
@@ -224,7 +226,7 @@ export async function approveMilestone(
 			},
 		})
 	} catch (err) {
-		console.error("[admin] approveMilestone error:", err)
+		log.error({ err }, "approveMilestone error")
 		const msg = err instanceof Error ? err.message : String(err)
 		const retriesExhausted =
 			typeof err === "object" && err !== null && "retriesExhausted" in err
@@ -259,7 +261,9 @@ export async function rejectMilestone(
 		return
 	}
 	if (reason.length > 1000) {
-		res.status(400).json({ error: "Rejection reason must be 1000 characters or fewer" })
+		res
+			.status(400)
+			.json({ error: "Rejection reason must be 1000 characters or fewer" })
 		return
 	}
 	const sanitizedReason = sanitizeHtml(reason, {
@@ -328,11 +332,12 @@ export async function rejectMilestone(
 				})
 			}
 		} catch (emailErr) {
-			console.error("[admin] rejection email failed (non-blocking):", emailErr)
+			log.error({ err: emailErr }, "Rejection email failed (non-blocking)")
 		}
 
-		console.info(
-			`[admin] Scholar ${report.scholar_address} notified of rejection for milestone ${report.milestone_id} in course ${report.course_id}`,
+		log.info(
+			{ milestoneId: report.milestone_id, courseId: report.course_id },
+			"Scholar notified of rejection",
 		)
 
 		res.status(200).json({
@@ -346,7 +351,7 @@ export async function rejectMilestone(
 			},
 		})
 	} catch (err) {
-		console.error("[admin] rejectMilestone error:", err)
+		log.error({ err }, "rejectMilestone error")
 		const msg = err instanceof Error ? err.message : String(err)
 		const retriesExhausted =
 			typeof err === "object" && err !== null && "retriesExhausted" in err
@@ -648,7 +653,6 @@ export async function batchRejectMilestones(
 		res.status(500).json({ error: "Failed to batch reject milestones" })
 	}
 }
-
 export async function batchApproveMilestones(
 	req: AdminRequest,
 	res: Response,
