@@ -9,6 +9,7 @@ import { getRpcCache, CacheKey } from "../lib/rpc-cache"
 import { leaderboardEmitter } from "../lib/leaderboard-emitter"
 import { invalidateApiResponseCacheType } from "../lib/api-response-cache"
 import { logger } from "../lib/logger"
+import { createNotification } from "../db/notifications-store"
 
 const log = logger.child({ module: "indexer" })
 
