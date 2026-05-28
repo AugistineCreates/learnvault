@@ -39,6 +39,7 @@ const Tracks = lazy(() => import("./pages/Tracks"))
 const Treasury = lazy(() => import("./pages/Treasury"))
 const Wiki = lazy(() => import("./pages/Wiki"))
 const WikiPage = lazy(() => import("./pages/WikiPage"))
+const FAQPage = lazy(() => import("./pages/FAQPage"))
 
 const renderRoute = (element: ReactNode) => (
 	<ErrorBoundary>
@@ -92,6 +93,7 @@ function App() {
 					<Route path="/wiki" element={renderRoute(<Wiki />)} />
 					<Route path="/wiki/:slug" element={renderRoute(<WikiPage />)} />
 					<Route path="/tracks" element={renderRoute(<Tracks />)} />
+					<Route path="/faq" element={renderRoute(<FAQPage />)} />
 					<Route path="/treasury" element={renderRoute(<Treasury />)} />
 					<Route path="/donor" element={renderRoute(<Donor />)} />
 					<Route path="/sponsor" element={renderRoute(<SponsorPortal />)} />
