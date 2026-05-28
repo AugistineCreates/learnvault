@@ -34,9 +34,11 @@ import { healthRouter } from "./routes/health.routes"
 import { impactRouter } from "./routes/impact.routes"
 import { leaderboardRouter } from "./routes/leaderboard.routes"
 import { createMeRouter } from "./routes/me.routes"
+import { mentorshipRouter } from "./routes/mentorship.routes"
 import { moderationRouter } from "./routes/moderation.routes"
 import { notificationsRouter } from "./routes/notifications.routes"
 import { createPeerReviewRouter } from "./routes/peer-review.routes"
+import { createRecommendationsRouter } from "./routes/recommendations.routes"
 import { createScholarsRouter } from "./routes/scholars.routes"
 import { scholarshipsRouter } from "./routes/scholarships.routes"
 import { sponsorsRouter } from "./routes/sponsors.routes"
@@ -44,7 +46,6 @@ import { treasuryRouter } from "./routes/treasury.routes"
 import { createUploadRouter } from "./routes/upload.routes"
 import { validatorRouter } from "./routes/validator.routes"
 import { wikiRouter } from "./routes/wiki.routes"
-import { createRecommendationsRouter } from "./routes/recommendations.routes"
 import { createAuthService } from "./services/auth.service"
 import {
 	createJwtService,
@@ -153,6 +154,7 @@ app.use("/api", coursesRouter)
 app.use("/api", createEnrollmentsRouter(jwtService))
 app.use("/api", createScholarsRouter(jwtService))
 app.use("/api", scholarshipsRouter)
+app.use("/api", mentorshipRouter)
 app.use("/api", createRecommendationsRouter(jwtService))
 app.use("/api", createForumRouter(jwtService))
 app.use("/api", createCredentialsRouter(jwtService))
