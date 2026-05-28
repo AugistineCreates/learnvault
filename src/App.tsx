@@ -12,6 +12,7 @@ import { useLocalizeDocumentAttributes } from "./hooks/uselocalizeDocumentAttrib
 import { NetworkProvider } from "./providers/NetworkProvider"
 
 const Admin = lazy(() => import("./pages/Admin"))
+const AdminModeration = lazy(() => import("./pages/AdminModeration"))
 const Community = lazy(() => import("./pages/Community"))
 const Courses = lazy(() => import("./pages/Courses"))
 const Credential = lazy(() => import("./pages/Credential"))
@@ -87,10 +88,8 @@ function App() {
 						element={renderRoute(<ScholarshipApply />)}
 					/>
 					<Route path="/admin" element={renderRoute(<Admin />)} />
-					<Route
-						path="/admin/lesson-diff"
-						element={renderRoute(<LessonVersionDiff />)}
-					/>
+					<Route path="/admin/lesson-diff" element={renderRoute(<LessonVersionDiff />)} />
+					<Route path="/admin/moderation" element={renderRoute(<AdminModeration />)} />
 					<Route path="/wiki" element={renderRoute(<Wiki />)} />
 					<Route path="/wiki/:slug" element={renderRoute(<WikiPage />)} />
 					<Route path="/tracks" element={renderRoute(<Tracks />)} />
