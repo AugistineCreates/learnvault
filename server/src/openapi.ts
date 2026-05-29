@@ -1,3 +1,4 @@
+/// <reference path="./types.d.ts" />
 import path from "node:path"
 
 import swaggerJSDoc from "swagger-jsdoc"
@@ -65,10 +66,78 @@ export const buildOpenApiSpec = () => {
 					HealthResponse: {
 						type: "object",
 						properties: {
-							status: { type: "string", example: "ok" },
+							status: {
+								type: "string",
+								enum: ["healthy", "degraded", "unhealthy"],
+								example: "healthy",
+							},
+							db: {
+								type: "string",
+								enum: ["connected", "disconnected"],
+							},
+							uptime: { type: "number", format: "float" },
 							timestamp: { type: "string", format: "date-time" },
+							version: { type: "string" },
+							commitHash: { type: "string" },
+							dbPool: {
+								type: "object",
+								properties: {
+									totalConnections: { type: "integer", nullable: true },
+									idleConnections: { type: "integer", nullable: true },
+									waitingClients: { type: "integer", nullable: true },
+								},
+								required: [
+									"totalConnections",
+									"idleConnections",
+									"waitingClients",
+								],
+							},
+							checks: {
+								type: "object",
+								properties: {
+									database: {
+										type: "object",
+										properties: {
+											status: { type: "string" },
+											responseTimeMs: { type: "integer", nullable: true },
+											error: { type: "string" },
+										},
+										required: ["status", "responseTimeMs"],
+									},
+									redis: {
+										type: "object",
+										properties: {
+											status: { type: "string" },
+											responseTimeMs: { type: "integer", nullable: true },
+											error: { type: "string" },
+											details: { type: "string" },
+										},
+										required: ["status", "responseTimeMs"],
+									},
+									stellarHorizon: {
+										type: "object",
+										properties: {
+											status: { type: "string" },
+											responseTimeMs: { type: "integer", nullable: true },
+											url: { type: "string" },
+											error: { type: "string" },
+										},
+										required: ["status", "responseTimeMs", "url"],
+									},
+								},
+								required: ["database", "redis", "stellarHorizon"],
+							},
 						},
-						required: ["status", "timestamp"],
+						required: [
+							"status",
+							"db",
+							"uptime",
+							"timestamp",
+							"version",
+							"commitHash",
+							"dbPool",
+							"checks",
+						],
 					},
 					Course: {
 						type: "object",
@@ -124,7 +193,7 @@ export const buildOpenApiSpec = () => {
 							votes_against: { type: "integer" },
 							status: {
 								type: "string",
-								enum: ["pending", "approved", "rejected"],
+								enum: ["pending", "approved", "queued", "rejected"],
 							},
 							cancelled: { type: "boolean" },
 							deadline: { type: "string", format: "date-time" },
@@ -346,6 +415,43 @@ export const buildOpenApiSpec = () => {
 							"metadata_uri",
 							"revoked",
 						],
+					},
+					CourseImportRow: {
+						type: "object",
+						properties: {
+							title: { type: "string" },
+							slug: { type: "string" },
+							track: { type: "string" },
+							difficulty: { type: "string" },
+							description: { type: "string", nullable: true },
+							coverImage: { type: "string", nullable: true },
+							published: { type: "boolean" },
+						},
+						required: ["title", "slug", "track", "difficulty"],
+					},
+					UserProfile: {
+						type: "object",
+						properties: {
+							address: { type: "string" },
+							display_name: { type: "string", nullable: true },
+							bio: { type: "string", nullable: true },
+							avatar_url: { type: "string", nullable: true },
+							twitter: { type: "string", nullable: true },
+							github: { type: "string", nullable: true },
+							website: { type: "string", nullable: true },
+							created_at: { type: "string", format: "date-time" },
+							updated_at: { type: "string", format: "date-time" },
+						},
+						required: ["address"],
+					},
+					ProfileStats: {
+						type: "object",
+						properties: {
+							lrn_balance: { type: "string" },
+							enrolled_courses: { type: "array", items: { type: "string" } },
+							completed_milestones: { type: "integer" },
+							pending_milestones: { type: "integer" },
+						},
 					},
 				},
 				responses: {

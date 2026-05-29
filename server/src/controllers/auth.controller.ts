@@ -123,26 +123,23 @@ export function createAuthControllers(authService: AuthService) {
 		},
 
 		async postLogout(req: Request, res: Response): Promise<void> {
-			const authHeader = req.headers.authorization
-			if (!authHeader || !authHeader.startsWith("Bearer ")) {
-				res.status(401).json({ error: "Missing authorization header" })
-				return
-			}
+			const header = req.headers.authorization
+			const token = header?.startsWith("Bearer ")
+				? header.slice("Bearer ".length).trim()
+				: ""
 
-			const token = authHeader.split(" ")[1]
 			if (!token) {
-				res.status(401).json({ error: "Missing token" })
+				res.status(401).json({ error: "Unauthorized" })
 				return
 			}
 
 			try {
-				await authService.logout(token)
+				await authService.revokeToken(token)
 				res.status(200).json({ message: "Logged out successfully" })
 			} catch (err) {
-				const message = err instanceof Error ? err.message : "Logout failed"
-				res.status(400).json({ error: message })
+				const message = err instanceof Error ? err.message : "Unauthorized"
+				res.status(401).json({ error: message })
 			}
 		},
 	}
 }
-
